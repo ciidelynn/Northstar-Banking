@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Northstar Bank - ยืนยันตัวตน</title>
+    <style>
+        body { 
+            font-family: sans-serif; 
+            background: linear-gradient(135deg, #0a192f 0%, #172a45 100%); 
+            display: flex; 
+            flex-direction: column;
+            justify-content: space-between; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+            box-sizing: border-box;
+            padding: 40px 20px;
+            opacity: 0; /* ซ่อนหน้าจอไว้ชั่วคราวตอนโหลด ป้องกันการกระพริบข้อความ */
+            transition: opacity 0.15s ease-in;
+        }
+        body.loaded {
+            opacity: 1; /* แสดงผลเมื่อตรวจสอบสถานะ PIN เรียบร้อยแล้ว */
+        }
+        .bank-brand {
+            font-size: 24px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+        .bank-brand .north { color: #ffffff; }
+        .bank-brand .bank {
+            color: #ffffff; 
+            background-color: #004080; 
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-left: 4px;
+        }
+        .container {
+            width: 100%;
+            max-width: 340px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-grow: 1;
+            justify-content: center;
+        }
+        h2 { 
+            color: #ffffff; 
+            font-size: 18px; 
+            font-weight: 600;
+            margin-bottom: 6px;
+            text-align: center;
+        }
+        p {
+            color: #94a3b8;
+            font-size: 14px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .username-box {
+            width: 100%;
+            display: none; 
+            flex-direction: column;
+            align-items: center;
+        }
+        input { 
+            width: 100%; 
+            padding: 14px; 
+            margin-bottom: 16px; 
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15); 
+            border-radius: 10px; 
+            box-sizing: border-box; 
+            color: #ffffff;
+            font-size: 15px;
+            text-align: center;
+            outline: none;
+        }
+        input::placeholder { color: #94a3b8; }
+        input:focus { border-color: #38bdf8; background: rgba(255, 255, 255, 0.12); }
+        
+        .save-btn {
+            width: 100%;
+            padding: 14px;
+            background: #38bdf8;
+            color: #0a192f;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .save-btn:hover { background: #0ea5e9; }
+
+        .pin-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+        .pin-display {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 40px;
+        }
+        .pin-dot {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(56, 189, 248, 0.6);
+            border-radius: 50%;
+            background: rgba(56, 189, 248, 0.1); 
+            transition: background 0.2s, border-color 0.2s;
+        }
+        .pin-dot.active {
+            background: #38bdf8;
+            border-color: #38bdf8;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+        }
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            width: 100%;
+        }
+        .key-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 18px 0;
+            font-size: 22px;
+            font-weight: bold;
+            color: #ffffff;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+        .key-btn:active {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(0.95);
+        }
+        .key-btn.action-c {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border-color: rgba(239, 68, 68, 0.3);
+            font-size: 20px;
+        }
+        .key-btn.action-del {
+            background: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
+            font-size: 20px;
+        }
+        .footer-space { height: 20px; }
+
+        /* สไตล์ Custom Popup สุดน่ารัก กลมกลืนกับธีม */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10, 25, 47, 0.8);
+            backdrop-filter: blur(4px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+        }
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-card {
+            background: #172a45;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            width: 85%;
+            max-width: 300px;
+            border-radius: 16px;
+            padding: 24px 20px;
+            text-align: center;
+            transform: scale(0.9);
+            transition: transform 0.2s ease;
+        }
+        .modal-overlay.show .modal-card {
+            transform: scale(1);
+        }
+        .modal-icon {
+            font-size: 36px;
+            margin-bottom: 12px;
+        }
+        .modal-title {
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .modal-desc {
+            color: #94a3b8;
+            font-size: 13px;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+        .modal-btn {
+            background: #38bdf8;
+            color: #0a192f;
+            border: none;
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .modal-btn:hover { background: #0ea5e9; }
+    </style>
+</head>
+<body>
+
+    <div class="bank-brand">
+        <span class="north">NORTHSTAR</span><span class="bank">BANK</span>
+    </div>
+    
+    <div class="container">
+        <h2 id="main-title">กำลังโหลด...</h2>
+        <p id="main-subtitle">โปรดรอสักครู่</p>
+        
+        <div class="pin-section" id="pin-section">
+            <div class="pin-display">
+                <div class="pin-dot" id="dot-0"></div>
+                <div class="pin-dot" id="dot-1"></div>
+                <div class="pin-dot" id="dot-2"></div>
+                <div class="pin-dot" id="dot-3"></div>
+                <div class="pin-dot" id="dot-4"></div>
+                <div class="pin-dot" id="dot-5"></div>
+            </div>
+
+            <div class="keypad">
+                <button class="key-btn" onclick="pressKey('1')">1</button>
+                <button class="key-btn" onclick="pressKey('2')">2</button>
+                <button class="key-btn" onclick="pressKey('3')">3</button>
+                <button class="key-btn" onclick="pressKey('4')">4</button>
+                <button class="key-btn" onclick="pressKey('5')">5</button>
+                <button class="key-btn" onclick="pressKey('6')">6</button>
+                <button class="key-btn" onclick="pressKey('7')">7</button>
+                <button class="key-btn" onclick="pressKey('8')">8</button>
+                <button class="key-btn" onclick="pressKey('9')">9</button>
+                <button class="key-btn action-c" onclick="clearPin()">C</button>
+                <button class="key-btn" onclick="pressKey('0')">0</button>
+                <button class="key-btn action-del" onclick="deleteKey()">⌫</button>
+            </div>
+        </div>
+
+        <div class="username-box" id="username-section">
+            <input type="text" id="username-input" placeholder="ระบุ Username ของคุณ">
+            <button class="save-btn" onclick="saveUsername()">ยืนยันและเข้าสู่ระบบ</button>
+        </div>
+    </div>
+
+    <div class="footer-space"></div>
+
+    <!-- Custom Popup Modal -->
+    <div class="modal-overlay" id="customModal">
+        <div class="modal-card">
+            <div class="modal-icon" id="modalIcon">✨</div>
+            <div class="modal-title" id="modalTitle">แจ้งเตือน</div>
+            <div class="modal-desc" id="modalDesc">ข้อความรายละเอียดแจ้งเตือนตรงนี้</div>
+            <button class="modal-btn" id="modalBtn" onclick="closeModal()">ตกลง</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth } from "./firebase-config.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        let currentPin = "";
+        let setupStep = 1; 
+        let firstPinTemp = "";
+        let hasExistingPin = false; 
+        let currentUserObj = null;
+        let modalCallback = null;
+
+        function showPopup(icon, title, desc, callback) {
+            document.getElementById("modalIcon").innerText = icon;
+            document.getElementById("modalTitle").innerText = title;
+            document.getElementById("modalDesc").innerText = desc;
+            modalCallback = callback || null;
+            document.getElementById("customModal").classList.add("show");
+        }
+
+        window.closeModal = function() {
+            document.getElementById("customModal").classList.remove("show");
+            if (modalCallback) {
+                modalCallback();
+                modalCallback = null;
+            }
+        }
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUserObj = user;
+                const savedPin = localStorage.getItem("user_pin_" + user.uid);
+
+                if (savedPin) {
+                    hasExistingPin = true;
+                    document.getElementById("main-title").innerText = "กรอกรหัส PIN ของคุณ";
+                    document.getElementById("main-subtitle").innerText = "โปรดใส่รหัส PIN 6 หลักเพื่อเข้าสู่ระบบ";
+                } else {
+                    hasExistingPin = false;
+                    document.getElementById("main-title").innerText = "สร้างรหัส PIN";
+                    document.getElementById("main-subtitle").innerText = "กำหนดรหัส PIN 6 หลักใหม่";
+                }
+
+                // ตรวจสอบข้อมูลเสร็จแล้ว แสดงหน้าจอทันทีแบบไร้รอยต่อ
+                document.body.classList.add("loaded");
+            } else {
+                window.location.replace("index.html");
+            }
+        });
+
+        window.pressKey = function(num) {
+            if (currentPin.length < 6) {
+                currentPin += num;
+                updateDots();
+
+                if (currentPin.length === 6) {
+                    setTimeout(handlePinComplete, 300);
+                }
+            }
+        }
+
+        window.deleteKey = function() {
+            currentPin = currentPin.slice(0, -1);
+            updateDots();
+        }
+
+        window.clearPin = function() {
+            currentPin = "";
+            updateDots();
+        }
+
+        function updateDots() {
+            for (let i = 0; i < 6; i++) {
+                const dot = document.getElementById(`dot-${i}`);
+                if (i < currentPin.length) {
+                    dot.classList.add("active");
+                } else {
+                    dot.classList.remove("active");
+                }
+            }
+        }
+
+        function handlePinComplete() {
+            if (!currentUserObj) return;
+
+            if (hasExistingPin) {
+                const savedPin = localStorage.getItem("user_pin_" + currentUserObj.uid);
+                if (currentPin === savedPin) {
+                    showPopup("🎉", "สำเร็จ!", "ยืนยัน PIN สำเร็จ กำลังเข้าสู่ระบบ", () => {
+                        window.location.replace("dashboard.html");
+                    });
+                } else {
+                    showPopup("⚠️", "รหัส PIN ไม่ถูกต้อง", "กรุณาลองใหม่อีกครั้ง", () => {
+                        clearPin();
+                    });
+                }
+            } else {
+                if (setupStep === 1) {
+                    firstPinTemp = currentPin;
+                    setupStep = 2;
+                    currentPin = "";
+                    updateDots();
+                    document.getElementById("main-title").innerText = "ยืนยันรหัส PIN อีกครั้ง";
+                    document.getElementById("main-subtitle").innerText = "กรอกรหัส PIN 6 หลักเดิมให้ตรงกัน";
+                } else if (setupStep === 2) {
+                    if (currentPin === firstPinTemp) {
+                        localStorage.setItem("user_pin_" + currentUserObj.uid, currentPin);
+                        
+                        showPopup("🔒", "ตั้งค่า PIN สำเร็จ", "ขั้นตอนสุดท้าย กรุณาตั้งชื่อผู้ใช้ของคุณ", () => {
+                            document.getElementById("pin-section").style.display = "none";
+                            document.getElementById("username-section").style.display = "flex";
+                            document.getElementById("main-title").innerText = "ตั้งชื่อผู้ใช้ (Username)";
+                            document.getElementById("main-subtitle").innerText = "ชื่อนี้จะใช้แสดงผลแทนอีเมลของคุณ";
+                        });
+                    } else {
+                        showPopup("❌", "รหัส PIN ไม่ตรงกัน", "กรุณาสร้าง PIN ใหม่อีกครั้ง", () => {
+                            setupStep = 1;
+                            firstPinTemp = "";
+                            currentPin = "";
+                            updateDots();
+                            document.getElementById("main-title").innerText = "สร้างรหัส PIN";
+                            document.getElementById("main-subtitle").innerText = "กำหนดรหัส PIN 6 หลักใหม่";
+                        });
+                    }
+                }
+            }
+        }
+
+        window.saveUsername = function() {
+            const usernameInput = document.getElementById("username-input").value.trim();
+            if (!usernameInput) {
+                showPopup("💡", "แจ้งเตือน", "กรุณากรอก Username ของคุณก่อนดำเนินการต่อ");
+                return;
+            }
+
+            localStorage.setItem("user_name_" + currentUserObj.uid, usernameInput);
+            showPopup("✨", "ยินดีต้อนรับ!", "บันทึกชื่อผู้ใช้สำเร็จ กำลังเข้าสู่หน้าหลัก", () => {
+                window.location.replace("dashboard.html");
+            });
+        }
+    </script>
+</body>
+</html>
