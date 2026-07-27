@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Northstar Bank - เข้าสู่ระบบ</title>
+    <style>
+        body { 
+            font-family: sans-serif; 
+            background: linear-gradient(135deg, #0a192f 0%, #172a45 100%); 
+            display: flex; 
+            flex-direction: column;
+            justify-content: space-between; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+            box-sizing: border-box;
+            padding: 40px 20px;
+        }
+        .bank-brand {
+            font-size: 24px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+        .bank-brand .north { color: #ffffff; }
+        .bank-brand .bank {
+            color: #ffffff; 
+            background-color: #004080; 
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-left: 4px;
+        }
+        .auth-container {
+            width: 100%;
+            max-width: 320px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            flex-grow: 1;
+        }
+        h2 { 
+            text-align: center; 
+            color: #ffffff; 
+            margin-top: 20px;
+            margin-bottom: 24px; 
+            font-size: 18px; 
+            font-weight: 600;
+        }
+        input { 
+            width: 100%; 
+            padding: 14px; 
+            margin: 8px 0; 
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15); 
+            border-radius: 10px; 
+            box-sizing: border-box; 
+            color: #ffffff;
+            font-size: 15px;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        input::placeholder {
+            color: #94a3b8;
+        }
+        input:focus {
+            border-color: #38bdf8;
+            background: rgba(255, 255, 255, 0.12);
+            outline: none;
+        }
+        button { 
+            width: 100%; 
+            padding: 14px; 
+            background: #38bdf8; 
+            color: #0a192f; 
+            border: none; 
+            border-radius: 10px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            font-size: 16px;
+            margin-top: 12px; 
+            transition: background 0.2s, transform 0.1s;
+        }
+        button:hover { 
+            background: #0ea5e9; 
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        .google-btn { 
+            background: rgba(255, 255, 255, 0.08); 
+            color: #ffffff; 
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            margin-top: 10px; 
+        }
+        .google-btn:hover { 
+            background: rgba(255, 255, 255, 0.15); 
+        }
+        .remember-container { 
+            display: flex; 
+            align-items: center; 
+            margin-top: 12px; 
+            margin-bottom: 8px;
+            font-size: 14px; 
+            color: #94a3b8; 
+        }
+        .remember-container input { 
+            width: auto; 
+            margin-right: 8px; 
+            accent-color: #38bdf8;
+            cursor: pointer;
+        }
+        .toggle-text { 
+            text-align: center; 
+            margin-top: 24px; 
+            font-size: 14px; 
+            color: #94a3b8; 
+        }
+        .toggle-text span {
+            color: #38bdf8; 
+            cursor: pointer; 
+            font-weight: bold;
+        }
+        .toggle-text span:hover { 
+            text-decoration: underline; 
+        }
+        .footer-space {
+            height: 20px;
+        }
+
+        /* สไตล์ Custom Popup สุดน่ารัก กลมกลืนกับธีม */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10, 25, 47, 0.8);
+            backdrop-filter: blur(4px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+        }
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-card {
+            background: #172a45;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            width: 85%;
+            max-width: 300px;
+            border-radius: 16px;
+            padding: 24px 20px;
+            text-align: center;
+            transform: scale(0.9);
+            transition: transform 0.2s ease;
+        }
+        .modal-overlay.show .modal-card {
+            transform: scale(1);
+        }
+        .modal-icon {
+            font-size: 36px;
+            margin-bottom: 12px;
+        }
+        .modal-title {
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .modal-desc {
+            color: #94a3b8;
+            font-size: 13px;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+        .modal-btn {
+            background: #38bdf8;
+            color: #0a192f;
+            border: none;
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .modal-btn:hover { background: #0ea5e9; }
+    </style>
+</head>
+<body>
+
+    <div class="bank-brand">
+        <span class="north">NORTHSTAR</span><span class="bank">BANK</span>
+    </div>
+    
+    <div class="auth-container">
+        <h2 id="form-title">เข้าสู่ระบบ</h2>
+        
+        <input type="email" id="email" placeholder="อีเมลของคุณ">
+        <input type="password" id="password" placeholder="รหัสผ่าน">
+        
+        <div class="remember-container" id="remember-box">
+            <input type="checkbox" id="rememberMe" checked>
+            <label for="rememberMe">จดจำฉัน (Remember Me)</label>
+        </div>
+
+        <button id="submit-btn" onclick="handleAuthAction()">เข้าสู่ระบบ</button>
+        <button class="google-btn" onclick="handleGoogleLogin()">เข้าสู่ระบบด้วย Google</button>
+        
+        <div class="toggle-text">
+            <span id="toggle-prompt">ยังไม่มีบัญชี?</span> <span id="toggle-mode" onclick="toggleAuthMode()">สร้างบัญชี</span>
+        </div>
+    </div>
+
+    <div class="footer-space"></div>
+
+    <!-- Custom Popup Modal -->
+    <div class="modal-overlay" id="customModal">
+        <div class="modal-card">
+            <div class="modal-icon" id="modalIcon">✨</div>
+            <div class="modal-title" id="modalTitle">แจ้งเตือน</div>
+            <div class="modal-desc" id="modalDesc">ข้อความรายละเอียดแจ้งเตือนตรงนี้</div>
+            <button class="modal-btn" id="modalBtn" onclick="closeModal()">ตกลง</button>
+        </div>
+    </div>
+
+    <!-- เชื่อมต่อไฟล์ JavaScript หลัก -->
+    <script type="module">
+        import { auth } from "./firebase-config.js";
+        import { 
+            signInWithEmailAndPassword, 
+            createUserWithEmailAndPassword, 
+            GoogleAuthProvider, 
+            signInWithPopup,
+            setPersistence,
+            browserLocalPersistence,
+            browserSessionPersistence 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        let isSignUpMode = false;
+        let modalCallback = null;
+
+        // 🔒 กำหนดอีเมลแอดมิน (ใช้ตัวพิมพ์เล็กเสมอเพื่อป้องกันปัญหาพิมพ์เล็กใหญ่)
+        const ADMIN_EMAIL = "ciiderydem@gmail.com";
+
+        // ฟังก์ชันตรวจสอบและเปลี่ยนหน้าปลายทางตามสิทธิ์ผู้ใช้
+        function redirectUser(userEmail) {
+            const normalizedEmail = (userEmail || "").trim().toLowerCase();
+            if (normalizedEmail === ADMIN_EMAIL) {
+                // ถ้าเป็นแอดมิน พาไปห้องแอดมินทันที 🛠️
+                window.location.href = "admin.html";
+            } else {
+                // ถ้าเป็นผู้ใช้ทั่วไป พาไปหน้าตั้งรหัส PIN/หน้าหลัก 👤
+                window.location.href = "pin.html";
+            }
+        }
+
+        function showPopup(icon, title, desc, callback) {
+            document.getElementById("modalIcon").innerText = icon;
+            document.getElementById("modalTitle").innerText = title;
+            document.getElementById("modalDesc").innerText = desc;
+            modalCallback = callback || null;
+            document.getElementById("customModal").classList.add("show");
+        }
+
+        window.closeModal = function() {
+            document.getElementById("customModal").classList.remove("show");
+            if (modalCallback) {
+                modalCallback();
+                modalCallback = null;
+            }
+        }
+
+        window.toggleAuthMode = function() {
+            isSignUpMode = !isSignUpMode;
+            const title = document.getElementById("form-title");
+            const btn = document.getElementById("submit-btn");
+            const prompt = document.getElementById("toggle-prompt");
+            const mode = document.getElementById("toggle-mode");
+            const rememberBox = document.getElementById("remember-box");
+
+            if (isSignUpMode) {
+                title.innerText = "สร้างบัญชีผู้ใช้";
+                btn.innerText = "สมัครสมาชิก";
+                prompt.innerText = "มีบัญชีอยู่แล้ว?";
+                mode.innerText = "เข้าสู่ระบบ";
+                rememberBox.style.display = "none";
+            } else {
+                title.innerText = "เข้าสู่ระบบ";
+                btn.innerText = "เข้าสู่ระบบ";
+                prompt.innerText = "ยังไม่มีบัญชี?";
+                mode.innerText = "สร้างบัญชี";
+                rememberBox.style.display = "flex";
+            }
+        }
+
+        window.handleAuthAction = async function() {
+            const email = document.getElementById("email").value.trim();
+            const password = document.getElementById("password").value.trim();
+            const rememberMe = document.getElementById("rememberMe").checked;
+
+            if (!email || !password) {
+                showPopup("⚠️", "ข้อมูลไม่ครบถ้วน", "กรุณากรอกอีเมลและรหัสผ่านให้ครบถ้วน");
+                return;
+            }
+
+            try {
+                const persistence = rememberMe ? browserLocalPersistence : browserSessionPersistence;
+                await setPersistence(auth, persistence);
+
+                if (isSignUpMode) {
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                    showPopup("🎉", "สมัครสมาชิกสำเร็จ", "กำลังพาคุณไปตั้งค่าระบบ", () => {
+                        redirectUser(userCredential.user.email);
+                    });
+                } else {
+                    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                    showPopup("✨", "เข้าสู่ระบบสำเร็จ", "กำลังตรวจสอบความปลอดภัย", () => {
+                        redirectUser(userCredential.user.email);
+                    });
+                }
+            } catch (error) {
+                showPopup("❌", "เกิดข้อผิดพลาด", error.message);
+            }
+        }
+
+        window.handleGoogleLogin = async function() {
+            const provider = new GoogleAuthProvider();
+            try {
+                await setPersistence(auth, browserLocalPersistence);
+                const result = await signInWithPopup(auth, provider);
+                showPopup("🎉", "เข้าสู่ระบบด้วย Google สำเร็จ", "กำลังเปลี่ยนหน้าไปยังระบบความปลอดภัย", () => {
+                    redirectUser(result.user.email);
+                });
+            } catch (error) {
+                showPopup("❌", "เข้าสู่ระบบไม่สำเร็จ", error.message);
+            }
+        }
+    </script>
+</body>
+</html>
