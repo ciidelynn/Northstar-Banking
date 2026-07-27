@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Northstar Bank - ตั้งค่า & ติดต่อเรา</title>
+    <style>
+        body { 
+            font-family: sans-serif; 
+            background: radial-gradient(circle at top, #1e293b 0%, #0a192f 60%, #020617 100%); 
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0; 
+            padding: 30px 20px;
+            color: #ffffff;
+            box-sizing: border-box;
+        }
+        .container { width: 100%; max-width: 360px; }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .back-btn {
+            background: rgba(255, 255, 255, 0.08);
+            color: #38bdf8;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .page-title { font-size: 16px; font-weight: 700; color: #f8fafc; }
+
+        .card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 100%);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 20px;
+            padding: 24px 20px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .dev-title { font-size: 18px; font-weight: 700; color: #f8fafc; margin-bottom: 4px; }
+        .dev-sub { font-size: 13px; color: #94a3b8; margin-bottom: 20px; }
+
+        .contact-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            text-align: left;
+        }
+
+        .contact-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #ffffff;
+            font-size: 13px;
+        }
+
+        .contact-icon { font-size: 20px; }
+        .contact-detail { flex-grow: 1; word-break: break-all; }
+        .contact-label { font-size: 11px; color: #94a3b8; display: block; margin-bottom: 2px; }
+        .contact-val { font-weight: 600; color: #38bdf8; font-size: 13px; }
+
+        .btn-logout {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            width: 100%;
+            padding: 14px;
+            border-radius: 16px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: all 0.2s;
+        }
+        .btn-logout:active { background: rgba(239, 68, 68, 0.3); }
+
+        /* Custom Modal Style */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5, 11, 20, 0.85);
+            backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.25s ease;
+        }
+        .modal-overlay.show { opacity: 1; visibility: visible; }
+        .modal-card {
+            background: #112240;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            width: 85%;
+            max-width: 310px;
+            border-radius: 24px;
+            padding: 24px;
+            box-sizing: border-box;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            transform: scale(0.9);
+            transition: transform 0.25s ease;
+        }
+        .modal-overlay.show .modal-card { transform: scale(1); }
+
+        .modal-icon { font-size: 38px; margin-bottom: 12px; }
+        .modal-title { font-size: 17px; font-weight: 700; margin-bottom: 6px; color: #ffffff; }
+        .modal-desc { font-size: 13px; color: #94a3b8; margin-bottom: 20px; }
+
+        .modal-btn-row { display: flex; gap: 10px; }
+        .btn-confirm-logout {
+            background: #ef4444; color: #ffffff; border: none; width: 100%; padding: 12px;
+            border-radius: 12px; font-weight: 700; font-size: 13px; cursor: pointer;
+        }
+        .btn-cancel-logout {
+            background: rgba(255, 255, 255, 0.08); color: #94a3b8; border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 100%; padding: 12px; border-radius: 12px; font-weight: 600; font-size: 13px; cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <a href="dashboard.html" class="back-btn">‹ กลับหน้าหลัก</a>
+            <div class="page-title">ตั้งค่า & ติดต่อเรา</div>
+            <div style="width: 60px;"></div>
+        </div>
+
+        <!-- การ์ดผู้พัฒนา -->
+        <div class="card">
+            <div class="dev-title">Northstar Developer</div>
+            <div class="dev-sub">ระบบจำลองการโอนเงินธนาคาร</div>
+
+            <div class="contact-list">
+                <div class="contact-item">
+                    <span class="contact-icon">✉️</span>
+                    <div class="contact-detail">
+                        <span class="contact-label">Email Support</span>
+                        <span class="contact-val">ciilynzevorna@gmail.com</span>
+                    </div>
+                </div>
+
+                <div class="contact-item">
+                    <span class="contact-icon">🌐</span>
+                    <div class="contact-detail">
+                        <span class="contact-label">Facebook</span>
+                        <span class="contact-val">Ciilyn Zevor Rhynes</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ปุ่มออกจากระบบ -->
+        <button class="btn-logout" id="btnLogout">🚪 ออกจากระบบ</button>
+    </div>
+
+    <!-- Pop-up ยืนยันออกจากระบบ -->
+    <div class="modal-overlay" id="logoutModal">
+        <div class="modal-card">
+            <div class="modal-icon">🚪</div>
+            <div class="modal-title">ออกจากระบบ?</div>
+            <div class="modal-desc">คุณต้องการออกจากระบบบัญชีใช่หรือไม่</div>
+            <div class="modal-btn-row">
+                <button class="btn-cancel-logout" id="btnCancelLogout">ยกเลิก</button>
+                <button class="btn-confirm-logout" id="btnConfirmLogout">ออกจากระบบ</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth } from "./firebase-config.js";
+        import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                window.location.replace("index.html");
+            }
+        });
+
+        const logoutModal = document.getElementById("logoutModal");
+
+        // กดปุ่มออกจากระบบ -> เปิด Pop-up
+        document.getElementById("btnLogout").addEventListener("click", () => {
+            logoutModal.classList.add("show");
+        });
+
+        // กดปุ่มยกเลิก -> ปิด Pop-up
+        document.getElementById("btnCancelLogout").addEventListener("click", () => {
+            logoutModal.classList.remove("show");
+        });
+
+        // กดปุ่มยืนยันออกจากระบบ -> สั่ง signOut
+        document.getElementById("btnConfirmLogout").addEventListener("click", async () => {
+            try {
+                await signOut(auth);
+                window.location.replace("index.html");
+            } catch (error) {
+                alert("เกิดข้อผิดพลาดในการออกจากระบบ");
+            }
+        });
+    </script>
+</body>
+</html>
