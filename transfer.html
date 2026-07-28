@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Northstar Bank - โอนเงิน / โอนพ้อยท์</title>
+    <style>
+        body { 
+            font-family: sans-serif; 
+            background: radial-gradient(circle at top, #1e293b 0%, #0a192f 60%, #020617 100%); 
+            display: flex; 
+            flex-direction: column;
+            justify-content: space-between; 
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0; 
+            box-sizing: border-box;
+            padding: 30px 20px;
+            color: #ffffff;
+            opacity: 0;
+            transition: opacity 0.15s ease-in;
+        }
+        body.loaded { opacity: 1; }
+        .container {
+            width: 100%;
+            max-width: 360px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-grow: 1;
+        }
+        .header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .back-btn {
+            background: rgba(255, 255, 255, 0.08);
+            color: #38bdf8;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .page-title { font-size: 16px; font-weight: 700; color: #f8fafc; }
+
+        /* Tab สลับโหมด โอนเงิน / โอน point */
+        .tab-selector {
+            width: 100%;
+            display: flex;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            padding: 4px;
+            margin-bottom: 16px;
+            box-sizing: border-box;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #94a3b8;
+        }
+        .tab-btn.active {
+            background: #38bdf8;
+            color: #0a192f;
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+        }
+
+        .card {
+            width: 100%;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 100%);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 24px;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            margin-bottom: 20px;
+        }
+        .section-label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+        .acc-info-box {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .acc-name { font-size: 14px; font-weight: 700; color: #f8fafc; }
+        .acc-number { font-size: 12px; color: #38bdf8; }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .input-group label { font-size: 12px; color: #cbd5e1; font-weight: 600; }
+        .input-field {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            padding: 12px;
+            color: #ffffff;
+            font-size: 14px;
+            box-sizing: border-box;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .input-field:focus { border-color: #38bdf8; }
+
+        .submit-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4);
+            transition: opacity 0.2s;
+        }
+        .submit-btn:active { opacity: 0.9; }
+
+        /* Modal Slip */
+        .modal-backdrop {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(2, 6, 23, 0.85);
+            backdrop-filter: blur(8px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .slip-card {
+            width: 100%;
+            max-width: 320px;
+            background: #0f172a;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 24px;
+            padding: 24px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 16px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+        }
+        .slip-title { font-size: 16px; font-weight: 700; color: #4ade80; }
+        .slip-divider { width: 100%; border-bottom: 1px dashed rgba(255, 255, 255, 0.15); margin: 4px 0; }
+        .slip-row { width: 100%; display: flex; justify-content: space-between; font-size: 12px; }
+        .slip-label { color: #94a3b8; }
+        .slip-value { color: #f8fafc; font-weight: 600; text-align: right; }
+        .slip-btn {
+            width: 100%;
+            background: #38bdf8;
+            color: #0f172a;
+            border: none;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        /* Custom Alert Pop-up */
+        .custom-alert-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5, 11, 20, 0.85);
+            backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.25s ease;
+        }
+        .custom-alert-overlay.show { opacity: 1; visibility: visible; }
+        .custom-alert-card {
+            background: #112240;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            width: 85%;
+            max-width: 310px;
+            border-radius: 24px;
+            padding: 24px;
+            box-sizing: border-box;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            transform: scale(0.9);
+            transition: transform 0.25s ease;
+        }
+        .custom-alert-overlay.show .custom-alert-card { transform: scale(1); }
+        .alert-icon { font-size: 38px; margin-bottom: 12px; }
+        .alert-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; color: #ffffff; }
+        .alert-desc { font-size: 13px; color: #94a3b8; margin-bottom: 20px; line-height: 1.4; }
+        .btn-alert-ok {
+            background: #38bdf8; color: #0a192f; border: none; width: 100%; padding: 12px;
+            border-radius: 12px; font-weight: 700; font-size: 13px; cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <a href="dashboard.html" class="back-btn">‹ กลับหน้าหลัก</a>
+            <div class="page-title" id="pageTitleText">โอนเงิน</div>
+            <div style="width: 60px;"></div>
+        </div>
+
+        <!-- แถบสลับโหมด โอนเงิน / โอน point -->
+        <div class="tab-selector">
+            <div class="tab-btn active" id="tabMoney" onclick="switchMode('money')">โอนเงิน (THB)</div>
+            <div class="tab-btn" id="tabPoint" onclick="switchMode('point')">โอน point</div>
+        </div>
+
+        <div class="card">
+            <div class="input-group">
+                <div class="section-label" id="sourceLabelTitle">บัญชีผู้โอน (บัญชีปัจจุบัน)</div>
+                <div class="acc-info-box" style="margin-top: 6px;">
+                    <div class="acc-name" id="sourceName">กำลังโหลด...</div>
+                    <div class="acc-number" id="sourceNumber">--</div>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label for="targetNumber" id="targetLabelText">เลขบัญชีปลายทาง (13 ตัวรวมขีด)</label>
+                <input type="text" id="targetNumber" class="input-field" placeholder="xxx-xx-xxxx-x" maxlength="13">
+            </div>
+
+            <div class="input-group">
+                <label for="amount" id="amountLabelText">จำนวนเงิน (บาท)</label>
+                <input type="number" id="amount" class="input-field" placeholder="0.00" step="any">
+            </div>
+
+            <div class="input-group" id="memoGroup">
+                <label for="memo">หมายเหตุ (ไม่บังคับ)</label>
+                <input type="text" id="memo" class="input-field" placeholder="ระบุบันทึกช่วยจำ...">
+            </div>
+
+            <button class="submit-btn" id="transferBtn">ยืนยันการโอนเงิน</button>
+        </div>
+    </div>
+
+    <!-- Modal Slip -->
+    <div class="modal-backdrop" id="slipModal">
+        <div class="slip-card">
+            <div style="font-size: 32px;" id="slipEmoji">🎉</div>
+            <div class="slip-title" id="slipHeaderTitle">ทำรายการสำเร็จ</div>
+            <div class="slip-divider"></div>
+            
+            <div class="slip-row"><span class="slip-label">วัน/เวลา:</span><span class="slip-value" id="slipDateTime">--</span></div>
+            <div class="slip-row"><span class="slip-label">ผู้โอน:</span><span class="slip-value" id="slipSenderName">--</span></div>
+            <div class="slip-row"><span class="slip-label">เลขบัญชีโอน:</span><span class="slip-value" id="slipSenderNo">--</span></div>
+            <div class="slip-row"><span class="slip-label">ผู้รับ:</span><span class="slip-value" id="slipReceiverName">--</span></div>
+            <div class="slip-row"><span class="slip-label">เลขบัญชีรับ:</span><span class="slip-value" id="slipReceiverNo">--</span></div>
+            <div class="slip-row"><span class="slip-label" id="slipAmountLabel">จำนวนเงิน:</span><span class="slip-value" id="slipAmount" style="color: #f87171;">--</span></div>
+            <div class="slip-row" id="slipMemoRow" style="display:none;"><span class="slip-label">หมายเหตุ:</span><span class="slip-value" id="slipMemo">--</span></div>
+
+            <div class="slip-divider"></div>
+            <button class="slip-btn" onclick="window.location.href='dashboard.html'">กลับหน้าหลัก</button>
+        </div>
+    </div>
+
+    <!-- Custom Alert Pop-up -->
+    <div class="custom-alert-overlay" id="customAlert">
+        <div class="custom-alert-card">
+            <div class="alert-icon" id="alertIcon">⚠️</div>
+            <div class="alert-title" id="alertTitle">แจ้งเตือน</div>
+            <div class="alert-desc" id="alertMessage">ข้อความแจ้งเตือน</div>
+            <button class="btn-alert-ok" id="btnAlertOk">ตกลง</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth } from "./firebase-config.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, updateDoc, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const db = getFirestore();
+        let currentUser = null;
+        let activeAccountDocId = null;
+        let activeAccount = null;
+        let currentMode = 'money'; // 'money' หรือ 'point'
+
+        window.switchMode = function(mode) {
+            currentMode = mode;
+            const tabMoney = document.getElementById("tabMoney");
+            const tabPoint = document.getElementById("tabPoint");
+            const pageTitleText = document.getElementById("pageTitleText");
+            const targetLabelText = document.getElementById("targetLabelText");
+            const amountLabelText = document.getElementById("amountLabelText");
+            const transferBtn = document.getElementById("transferBtn");
+            const memoGroup = document.getElementById("memoGroup");
+
+            if (mode === 'money') {
+                tabMoney.classList.add("active");
+                tabPoint.classList.remove("active");
+                pageTitleText.innerText = "โอนเงิน";
+                targetLabelText.innerText = "เลขบัญชีปลายทาง (13 ตัวรวมขีด)";
+                amountLabelText.innerText = "จำนวนเงิน (บาท)";
+                transferBtn.innerText = "ยืนยันการโอนเงิน";
+                memoGroup.style.display = "flex";
+            } else {
+                tabPoint.classList.add("active");
+                tabMoney.classList.remove("active");
+                pageTitleText.innerText = "โอน point";
+                targetLabelText.innerText = "เลขบัญชีผู้รับ point (13 ตัวรวมขีด)";
+                amountLabelText.innerText = "จำนวน point";
+                transferBtn.innerText = "ยืนยันการโอน point";
+                memoGroup.style.display = "none";
+            }
+        }
+
+        let onAlertCloseCallback = null;
+        function showAlert(msg, icon = "⚠️", title = "แจ้งเตือน", onClose = null) {
+            document.getElementById("alertIcon").innerText = icon;
+            document.getElementById("alertTitle").innerText = title;
+            document.getElementById("alertMessage").innerText = msg;
+            onAlertCloseCallback = onClose;
+            document.getElementById("customAlert").classList.add("show");
+        }
+
+        document.getElementById("btnAlertOk").addEventListener("click", () => {
+            document.getElementById("customAlert").classList.remove("show");
+            if (onAlertCloseCallback) {
+                onAlertCloseCallback();
+                onAlertCloseCallback = null;
+            }
+        });
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                await loadActiveAccount();
+            } else {
+                window.location.replace("index.html");
+            }
+        });
+
+        async function loadActiveAccount() {
+            const currentAccId = localStorage.getItem("current_account_id_" + currentUser.uid);
+            if (!currentAccId) {
+                showAlert("ยังไม่ได้เลือกบัญชีใช้งาน", "⚠️", "แจ้งเตือน", () => {
+                    window.location.replace("dashboard.html");
+                });
+                return;
+            }
+
+            try {
+                activeAccountDocId = currentAccId;
+                const docRef = doc(db, "accounts", currentAccId);
+                const docSnap = await getDoc(docRef);
+
+                if (!docSnap.exists()) {
+                    window.location.replace("dashboard.html");
+                    return;
+                }
+
+                activeAccount = docSnap.data();
+                document.getElementById("sourceName").innerText = activeAccount.accountName;
+                document.getElementById("sourceNumber").innerText = activeAccount.accountNumber;
+                document.body.classList.add("loaded");
+
+                const urlParams = new URLSearchParams(window.location.search);
+                const prefillTarget = urlParams.get('target');
+                const prefillMode = urlParams.get('mode');
+                
+                if (prefillMode === 'point') {
+                    switchMode('point');
+                }
+                if (prefillTarget) {
+                    document.getElementById("targetNumber").value = prefillTarget;
+                }
+
+            } catch (error) {
+                console.error("Error loading account:", error);
+            }
+        }
+
+        document.getElementById("transferBtn").addEventListener("click", async () => {
+            const targetNumInput = document.getElementById("targetNumber").value.trim();
+            const amountStr = document.getElementById("amount").value.trim();
+            const memo = document.getElementById("memo").value.trim();
+            const amount = parseFloat(amountStr);
+
+            if (!targetNumInput) {
+                showAlert("กรุณากรอกเลขบัญชีปลายทาง");
+                return;
+            }
+
+            if (targetNumInput === activeAccount.accountNumber) {
+                showAlert("เลขบัญชีปลายทางและต้นทางจะต้องไม่ซ้ำกัน");
+                return;
+            }
+
+            if (isNaN(amount) || amount <= 0) {
+                const unitName = (currentMode === 'money') ? 'จำนวนเงิน' : 'จำนวน point';
+                showAlert(`กรุณากรอก${unitName}ให้ถูกต้อง`);
+                return;
+            }
+
+            try {
+                // 1. โหลดข้อมูลบัญชีผู้ส่งล่าสุดแบบสดๆ
+                const sourceDocRef = doc(db, "accounts", activeAccountDocId);
+                const freshSourceSnap = await getDoc(sourceDocRef);
+                if (freshSourceSnap.exists()) {
+                    activeAccount = freshSourceSnap.data();
+                }
+
+                const fieldName = (currentMode === 'money') ? 'balance' : 'points';
+                const currentAvailable = Number(activeAccount[fieldName] || 0);
+
+                if (currentAvailable < amount) {
+                    const msgText = (currentMode === 'money') ? 'ยอดเงินในบัญชีไม่พอสำหรับทำรายการ' : 'point ของคุณไม่เพียงพอสำหรับโอน';
+                    showAlert(msgText);
+                    return;
+                }
+
+                // 2. ดึงข้อมูลบัญชีทั้งหมดมาเทียบเพื่อหาบัญชีปลายทางอย่างแม่นยำ
+                const allAccountsSnap = await getDocs(collection(db, "accounts"));
+                let targetDocId = null;
+                let targetData = null;
+                const cleanInputTarget = targetNumInput.replace(/-/g, "");
+
+                allAccountsSnap.forEach((d) => {
+                    const data = d.data();
+                    const dbAccNum = String(data.accountNumber || "").trim();
+                    const cleanDbAccNum = dbAccNum.replace(/-/g, "");
+
+                    if (cleanDbAccNum === cleanInputTarget) {
+                        targetDocId = d.id;
+                        targetData = data;
+                    }
+                });
+
+                if (!targetDocId || !targetData) {
+                    showAlert("ไม่พบเลขบัญชีปลายทางนี้ในระบบ กรุณาตรวจสอบใหม่อีกครั้ง");
+                    return;
+                }
+
+                if (targetDocId === activeAccountDocId) {
+                    showAlert("ไม่สามารถโอนเข้าบัญชีเดียวกันได้");
+                    return;
+                }
+
+                const targetFieldVal = Number(targetData[fieldName] || 0);
+                const newSourceVal = Number((currentAvailable - amount).toFixed(2));
+                const newTargetVal = Number((targetFieldVal + amount).toFixed(2));
+
+                const targetDocRef = doc(db, "accounts", targetDocId);
+
+                // 3. ทำการอัปเดตยอดทั้งฝั่งผู้ส่งและฝั่งผู้รับ (อัปเดตทั้ง point และ points เพื่อความปลอดภัยรองรับหลายหน้า)
+                if (currentMode === 'money') {
+                    await updateDoc(sourceDocRef, { balance: newSourceVal });
+                    await updateDoc(targetDocRef, { balance: newTargetVal });
+                } else {
+                    await updateDoc(sourceDocRef, { point: newSourceVal, points: newSourceVal });
+                    await updateDoc(targetDocRef, { point: newTargetVal, points: newTargetVal });
+                }
+
+                // 4. บันทึกประวัติรายการลงในฐานข้อมูล (ใส่ isPoint ให้ตรงกับหน้าแอดมิน)
+                await addDoc(collection(db, "transactions"), {
+                    type: currentMode,
+                    senderAccountNumber: activeAccount.accountNumber,
+                    senderName: activeAccount.accountName,
+                    receiverAccountNumber: targetData.accountNumber,
+                    receiverName: targetData.accountName,
+                    amount: amount,
+                    memo: (currentMode === 'money') ? (memo || "") : "โอน point",
+                    isPoint: (currentMode === 'point'),
+                    timestamp: new Date()
+                });
+
+                // 5. แสดงผลสลิปทำรายการสำเร็จ
+                const now = new Date();
+                const dateStr = now.toLocaleDateString('th-TH', { year: 'numeric', month: '2-digit', day: '2-digit' });
+                const timeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+                
+                document.getElementById("slipDateTime").innerText = `${dateStr} ${timeStr}`;
+                document.getElementById("slipSenderName").innerText = activeAccount.accountName;
+                document.getElementById("slipSenderNo").innerText = activeAccount.accountNumber;
+                document.getElementById("slipReceiverName").innerText = targetData.accountName;
+                document.getElementById("slipReceiverNo").innerText = targetData.accountNumber;
+
+                if (currentMode === 'money') {
+                    document.getElementById("slipHeaderTitle").innerText = "โอนเงินสำเร็จ";
+                    document.getElementById("slipAmountLabel").innerText = "จำนวนเงิน:";
+                    document.getElementById("slipAmount").innerText = `-${amount.toLocaleString('en-US', {minimumFractionDigits: 2})} THB`;
+                    if (memo) {
+                        document.getElementById("slipMemo").innerText = memo;
+                        document.getElementById("slipMemoRow").style.display = "flex";
+                    }
+                } else {
+                    document.getElementById("slipHeaderTitle").innerText = "โอน point สำเร็จ";
+                    document.getElementById("slipAmountLabel").innerText = "จำนวน point:";
+                    document.getElementById("slipAmount").innerText = `-${amount.toLocaleString()} point`;
+                    document.getElementById("slipMemoRow").style.display = "none";
+                }
+
+                document.getElementById("slipModal").style.display = "flex";
+
+            } catch (error) {
+                console.error("Transfer error:", error);
+                showAlert("เกิดข้อผิดพลาดในการทำรายการ กรุณาลองใหม่อีกครั้ง");
+            }
+        });
+    </script>
+</body>
+</html>
