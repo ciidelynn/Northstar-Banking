@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Northstar Bank - Admin Console</title>
+    <style>
+        body { 
+            font-family: sans-serif; 
+            background: radial-gradient(circle at top, #1e293b 0%, #0a192f 60%, #020617 100%); 
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0; 
+            box-sizing: border-box;
+            padding: 30px 20px;
+            color: #ffffff;
+            opacity: 0;
+            transition: opacity 0.15s ease-in;
+        }
+        body.loaded { opacity: 1; }
+        .container {
+            width: 100%;
+            max-width: 480px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .page-title { font-size: 18px; font-weight: 700; color: #f8fafc; display: flex; align-items: center; gap: 8px; }
+        .badge-admin { background: #f59e0b; color: #000; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 10px; }
+        .back-btn {
+            background: rgba(255, 255, 255, 0.08);
+            color: #38bdf8;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .card {
+            width: 100%;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 100%);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 24px;
+            padding: 20px;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+        .card-title { font-size: 14px; font-weight: 700; color: #38bdf8; margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
+
+        .input-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+        .input-group label { font-size: 12px; color: #cbd5e1; font-weight: 600; }
+        .input-field {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            padding: 12px;
+            color: #ffffff;
+            font-size: 14px;
+            box-sizing: border-box;
+            outline: none;
+        }
+        .input-field:focus { border-color: #38bdf8; }
+
+        .action-row { display: flex; gap: 10px; margin-top: 6px; }
+        .btn-deposit {
+            flex: 1;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white; border: none; padding: 12px; border-radius: 12px;
+            font-size: 13px; font-weight: 700; cursor: pointer;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+        .btn-withdraw {
+            flex: 1;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white; border: none; padding: 12px; border-radius: 12px;
+            font-size: 13px; font-weight: 700; cursor: pointer;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+        .btn-point-add {
+            flex: 1;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white; border: none; padding: 12px; border-radius: 12px;
+            font-size: 13px; font-weight: 700; cursor: pointer;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        }
+        .btn-point-deduct {
+            flex: 1;
+            background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+            color: white; border: none; padding: 12px; border-radius: 12px;
+            font-size: 13px; font-weight: 700; cursor: pointer;
+            box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
+        }
+
+        .list-box {
+            display: flex; flex-direction: column; gap: 10px; max-height: 280px; overflow-y: auto;
+        }
+        .list-item {
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px; padding: 12px 14px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .item-info { font-size: 12px; color: #cbd5e1; }
+        .item-title { font-size: 13px; font-weight: 700; color: #f8fafc; }
+        .item-val { font-size: 13px; font-weight: 700; color: #4ade80; text-align: right; }
+        
+        .delete-btn {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .delete-btn:hover { background: rgba(239, 68, 68, 0.4); }
+
+        /* Pop-up Modals */
+        .custom-alert-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5, 11, 20, 0.85); backdrop-filter: blur(8px);
+            display: flex; justify-content: center; align-items: center; z-index: 999;
+            opacity: 0; visibility: hidden; transition: all 0.25s ease;
+        }
+        .custom-alert-overlay.show { opacity: 1; visibility: visible; }
+        .custom-alert-card {
+            background: #112240; border: 1px solid rgba(56, 189, 248, 0.3);
+            width: 85%; max-width: 310px; border-radius: 24px; padding: 24px;
+            box-sizing: border-box; text-align: center;
+        }
+        .btn-alert-ok {
+            background: #38bdf8; color: #0a192f; border: none; width: 100%; padding: 12px;
+            border-radius: 12px; font-weight: 700; font-size: 13px; cursor: pointer; margin-top: 14px;
+        }
+        .modal-btn-row { display: flex; gap: 10px; margin-top: 14px; }
+        .btn-cancel {
+            background: rgba(255, 255, 255, 0.08); color: #94a3b8; border: none; flex: 1; padding: 12px;
+            border-radius: 12px; font-weight: 600; font-size: 13px; cursor: pointer;
+        }
+        .btn-confirm-delete {
+            background: #ef4444; color: #ffffff; border: none; flex: 1; padding: 12px;
+            border-radius: 12px; font-weight: 700; font-size: 13px; cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <div class="page-title">⚙️ Backend Console <span class="badge-admin">ADMIN</span></div>
+            <a href="dashboard.html" class="back-btn">‹ หน้าหลัก</a>
+        </div>
+
+        <!-- การ์ดจัดการยอดเงิน (ฝาก / หักเงิน) -->
+        <div class="card">
+            <div class="card-title">💰 จัดการยอดเงินบัญชี (Deposit / Deduct)</div>
+            <div class="input-group">
+                <label>เลขบัญชีเป้าหมาย (13 ตัวรวมขีด)</label>
+                <input type="text" id="targetAccNo" class="input-field" placeholder="xxx-xx-xxxx-x" maxlength="13">
+            </div>
+            <div class="input-group">
+                <label>จำนวนเงิน (บาท)</label>
+                <input type="number" id="targetAmount" class="input-field" placeholder="0.00" step="any">
+            </div>
+            <div class="action-row">
+                <button class="btn-deposit" id="btnDeposit">➕ เพิ่มเงิน</button>
+                <button class="btn-withdraw" id="btnDeduct">➖ หักเงิน</button>
+            </div>
+        </div>
+
+        <!-- การ์ดจัดการ Point (เพิ่ม / หัก Point) -->
+        <div class="card">
+            <div class="card-title">⭐ จัดการ Point สมาชิก</div>
+            <div class="input-group">
+                <label>เลขบัญชีเป้าหมาย (13 ตัวรวมขีด)</label>
+                <input type="text" id="targetPointAccNo" class="input-field" placeholder="xxx-xx-xxxx-x" maxlength="13">
+            </div>
+            <div class="input-group">
+                <label>จำนวน Point</label>
+                <input type="number" id="targetPointAmount" class="input-field" placeholder="0" step="any">
+            </div>
+            <div class="action-row">
+                <button class="btn-point-add" id="btnAddPoint">⭐ เพิ่ม Point</button>
+                <button class="btn-point-deduct" id="btnDeductPoint">➖ หัก Point</button>
+            </div>
+        </div>
+
+        <!-- รายการบัญชีทั้งหมดในระบบ + ปุ่มลบบัญชี -->
+        <div class="card">
+            <div class="card-title">🏦 บัญชีทั้งหมดในระบบ</div>
+            <div class="list-box" id="accountListContainer">
+                <div style="font-size: 12px; color: #94a3b8; text-align: center;">กำลังโหลดข้อมูล...</div>
+            </div>
+        </div>
+
+        <!-- ประวัติการโอนทั้งหมด -->
+        <div class="card">
+            <div class="card-title">📜 ประวัติธุรกรรมล่าสุด</div>
+            <div class="list-box" id="txListContainer">
+                <div style="font-size: 12px; color: #94a3b8; text-align: center;">กำลังโหลดข้อมูล...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Modal -->
+    <div class="custom-alert-overlay" id="customAlert">
+        <div class="custom-alert-card">
+            <div style="font-size: 38px; margin-bottom: 8px;" id="alertIcon">⚠️</div>
+            <div style="font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 6px;" id="alertTitle">แจ้งเตือน</div>
+            <div style="font-size: 13px; color: #94a3b8; line-height: 1.4;" id="alertMessage">ข้อความ</div>
+            <button class="btn-alert-ok" id="btnAlertOk">ตกลง</button>
+        </div>
+    </div>
+
+    <!-- Modal ยืนยันการลบบัญชี -->
+    <div class="custom-alert-overlay" id="confirmDeleteModal">
+        <div class="custom-alert-card">
+            <div style="font-size: 38px; margin-bottom: 8px;">🗑️</div>
+            <div style="font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 6px;">ยืนยันการลบบัญชี</div>
+            <div style="font-size: 13px; color: #94a3b8;" id="deleteAccMessage">คุณต้องการลบบัญชีนี้ใช่หรือไม่?</div>
+            <div class="modal-btn-row">
+                <button class="btn-cancel" onclick="closeDeleteModal()">ยกเลิก</button>
+                <button class="btn-confirm-delete" id="btnExecuteDelete">ลบทันที</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth } from "./firebase-config.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, query, getDocs, updateDoc, doc, addDoc, deleteDoc, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const db = getFirestore();
+        let pendingDeleteDocId = null;
+
+        const ADMIN_EMAIL = "ciiderydem@gmail.com";
+
+        function showAlert(msg, icon = "⚠️", title = "แจ้งเตือน") {
+            document.getElementById("alertIcon").innerText = icon;
+            document.getElementById("alertTitle").innerText = title;
+            document.getElementById("alertMessage").innerText = msg;
+            document.getElementById("customAlert").classList.add("show");
+        }
+        document.getElementById("btnAlertOk").addEventListener("click", () => {
+            document.getElementById("customAlert").classList.remove("show");
+        });
+
+        window.closeDeleteModal = function() {
+            document.getElementById("confirmDeleteModal").classList.remove("show");
+            pendingDeleteDocId = null;
+        }
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const userEmail = (user.email || "").trim().toLowerCase();
+                if (userEmail === ADMIN_EMAIL) {
+                    document.body.classList.add("loaded");
+                    await loadAllAccounts();
+                    await loadAllTransactions();
+                } else {
+                    alert("⛔ คุณไม่มีสิทธิ์เข้าถึงส่วนผู้ดูแลระบบ");
+                    window.location.replace("dashboard.html");
+                }
+            } else {
+                window.location.replace("index.html");
+            }
+        });
+
+        async function loadAllAccounts() {
+            try {
+                const q = query(collection(db, "accounts"));
+                const snap = await getDocs(q);
+                const container = document.getElementById("accountListContainer");
+                container.innerHTML = "";
+
+                if (snap.empty) {
+                    container.innerHTML = `<div style="font-size: 12px; color: #94a3b8; text-align: center;">ไม่พบบัญชีในระบบ</div>`;
+                    return;
+                }
+
+                snap.forEach(docSnap => {
+                    const acc = docSnap.data();
+                    const docId = docSnap.id;
+                    
+                    const pointVal = acc.point !== undefined ? acc.point 
+                                   : acc.points !== undefined ? acc.points 
+                                   : 0;
+                    
+                    container.innerHTML += `
+                        <div class="list-item">
+                            <div class="item-info">
+                                <div class="item-title">${acc.accountName}</div>
+                                <div style="color: #38bdf8;">${acc.accountNumber}</div>
+                            </div>
+                            <div style="display: flex; align-items: center;">
+                                <div style="text-align: right; margin-right: 10px;">
+                                    <div class="item-val">${Number(acc.balance || 0).toLocaleString('en-US', {minimumFractionDigits: 2})} ฿</div>
+                                    <div style="font-size: 11px; color: #f59e0b;">⭐ ${Number(pointVal).toLocaleString()} point</div>
+                                </div>
+                                <button class="delete-btn" onclick="promptDelete('${docId}', '${acc.accountName}', '${acc.accountNumber}')">ลบ</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function loadAllTransactions() {
+            try {
+                const q = query(collection(db, "transactions"), orderBy("timestamp", "desc"), limit(20));
+                const snap = await getDocs(q);
+                const container = document.getElementById("txListContainer");
+                container.innerHTML = "";
+
+                let txList = [];
+                snap.forEach(docSnap => {
+                    txList.push({ id: docSnap.id, ...docSnap.data() });
+                });
+
+                if (txList.length === 0) {
+                    container.innerHTML = `<div style="font-size: 12px; color: #94a3b8; text-align: center;">ยังไม่มีประวัติการทำรายการ</div>`;
+                    return;
+                }
+
+                txList.forEach(tx => {
+                    const isPointTx = tx.isPoint === true || tx.type === 'point';
+                    const unitLabel = isPointTx ? ' point' : ' ฿';
+                    const formattedAmount = isPointTx 
+                        ? Number(tx.amount || 0).toLocaleString() 
+                        : Number(tx.amount || 0).toLocaleString('en-US', {minimumFractionDigits: 2});
+
+                    container.innerHTML += `
+                        <div class="list-item">
+                            <div class="item-info">
+                                <div class="item-title">${isPointTx ? '⭐ ' : ''}${tx.senderName} ➔ ${tx.receiverName}</div>
+                                <div style="color: #64748b;">${tx.senderAccountNumber} ➔ ${tx.receiverAccountNumber}</div>
+                            </div>
+                            <div class="item-val" style="color: ${isPointTx ? '#f59e0b' : '#38bdf8'};">${formattedAmount}${unitLabel}</div>
+                        </div>
+                    `;
+                });
+            } catch (err) {
+                console.error(err);
+                document.getElementById("txListContainer").innerHTML = `<div style="font-size: 12px; color: #ef4444; text-align: center;">เกิดข้อผิดพลาดในการโหลดประวัติธุรกรรม</div>`;
+            }
+        }
+
+        async function adjustBalance(type) {
+            const accNo = document.getElementById("targetAccNo").value.trim();
+            const amountStr = document.getElementById("targetAmount").value.trim();
+            const amount = parseFloat(amountStr);
+
+            if (!accNo || accNo.length !== 13) return showAlert("กรุณากรอกเลขบัญชีให้ถูกต้อง (13 ตัวรวมขีด)");
+            if (isNaN(amount) || amount <= 0) return showAlert("กรุณาระบุจำนวนเงินที่ถูกต้อง");
+
+            try {
+                const allAccountsSnap = await getDocs(collection(db, "accounts"));
+                let targetDocId = null;
+                let currentBalance = 0;
+                let accName = "";
+                const cleanInput = accNo.replace(/-/g, "");
+
+                allAccountsSnap.forEach(d => {
+                    const data = d.data();
+                    if (String(data.accountNumber || "").replace(/-/g, "") === cleanInput) {
+                        targetDocId = d.id;
+                        currentBalance = Number(data.balance || 0);
+                        accName = data.accountName;
+                    }
+                });
+
+                if (!targetDocId) return showAlert("ไม่พบเลขบัญชีนี้ในระบบ");
+
+                let newBalance = currentBalance;
+                if (type === 'add') {
+                    newBalance = Number((currentBalance + amount).toFixed(2));
+                } else if (type === 'deduct') {
+                    if (currentBalance < amount) return showAlert(`ยอดเงินในบัญชีไม่พอให้หัก (มีอยู่ ${currentBalance.toLocaleString()} บาท)`);
+                    newBalance = Number((currentBalance - amount).toFixed(2));
+                }
+
+                await updateDoc(doc(db, "accounts", targetDocId), { balance: newBalance });
+
+                await addDoc(collection(db, "transactions"), {
+                    type: "money",
+                    senderAccountNumber: type === 'add' ? "ADMIN-DEPOSIT" : accNo,
+                    senderName: type === 'add' ? "ระบบหลังบ้าน (เติมเงิน)" : accName,
+                    receiverAccountNumber: type === 'add' ? accNo : "ADMIN-DEDUCT",
+                    receiverName: type === 'add' ? accName : "ระบบหลังบ้าน (หักเงิน)",
+                    amount: amount,
+                    memo: type === 'add' ? "เติมเงินโดยแอดมิน" : "หักเงินโดยแอดมิน",
+                    isPoint: false,
+                    timestamp: new Date()
+                });
+
+                showAlert(`${type === 'add' ? 'เติมเงิน' : 'หักเงิน'} จำนวน ${amount.toLocaleString()} บาท เรียบร้อยแล้ว`, "🎉", "สำเร็จ!");
+                document.getElementById("targetAmount").value = "";
+                
+                await loadAllAccounts();
+                await loadAllTransactions();
+
+            } catch (err) {
+                console.error(err);
+                showAlert("เกิดข้อผิดพลาดในการปรับยอดเงิน");
+            }
+        }
+
+        async function adjustPoint(type) {
+            const accNo = document.getElementById("targetPointAccNo").value.trim();
+            const amountStr = document.getElementById("targetPointAmount").value.trim();
+            const amount = parseFloat(amountStr);
+
+            if (!accNo || accNo.length !== 13) return showAlert("กรุณากรอกเลขบัญชีให้ถูกต้อง (13 ตัวรวมขีด)");
+            if (isNaN(amount) || amount <= 0) return showAlert("กรุณาระบุจำนวน Point ที่ถูกต้อง");
+
+            try {
+                const allAccountsSnap = await getDocs(collection(db, "accounts"));
+                let targetDocId = null;
+                let currentPoint = 0;
+                let accName = "";
+                const cleanInput = accNo.replace(/-/g, "");
+
+                allAccountsSnap.forEach(d => {
+                    const data = d.data();
+                    if (String(data.accountNumber || "").replace(/-/g, "") === cleanInput) {
+                        targetDocId = d.id;
+                        currentPoint = Number(data.point !== undefined ? data.point : (data.points || 0));
+                        accName = data.accountName;
+                    }
+                });
+
+                if (!targetDocId) return showAlert("ไม่พบเลขบัญชีนี้ในระบบ");
+
+                let newPoint = currentPoint;
+                if (type === 'add') {
+                    newPoint = currentPoint + amount;
+                } else if (type === 'deduct') {
+                    if (currentPoint < amount) return showAlert(`Point ในบัญชีไม่พอให้หัก (มีอยู่ ${currentPoint.toLocaleString()} point)`);
+                    newPoint = currentPoint - amount;
+                }
+
+                await updateDoc(doc(db, "accounts", targetDocId), { 
+                    point: newPoint,
+                    points: newPoint 
+                });
+
+                await addDoc(collection(db, "transactions"), {
+                    type: "point",
+                    senderAccountNumber: type === 'add' ? "ADMIN-POINT-ADD" : accNo,
+                    senderName: type === 'add' ? "ระบบหลังบ้าน (เพิ่ม Point)" : accName,
+                    receiverAccountNumber: type === 'add' ? accNo : "ADMIN-POINT-DEDUCT",
+                    receiverName: type === 'add' ? accName : "ระบบหลังบ้าน (หัก Point)",
+                    amount: amount,
+                    memo: type === 'add' ? "เพิ่ม Point โดยแอดมิน" : "หัก Point โดยแอดมิน",
+                    isPoint: true,
+                    timestamp: new Date()
+                });
+
+                showAlert(`${type === 'add' ? 'เพิ่ม' : 'หัก'} Point จำนวน ${amount.toLocaleString()} point เรียบร้อยแล้ว`, "⭐", "สำเร็จ!");
+                document.getElementById("targetPointAmount").value = "";
+                
+                await loadAllAccounts();
+                await loadAllTransactions();
+
+            } catch (err) {
+                console.error(err);
+                showAlert("เกิดข้อผิดพลาดในการปรับ Point");
+            }
+        }
+
+        document.getElementById("btnDeposit").addEventListener("click", () => adjustBalance('add'));
+        document.getElementById("btnDeduct").addEventListener("click", () => adjustBalance('deduct'));
+        document.getElementById("btnAddPoint").addEventListener("click", () => adjustPoint('add'));
+        document.getElementById("btnDeductPoint").addEventListener("click", () => adjustPoint('deduct'));
+
+        window.promptDelete = function(docId, name, accNo) {
+            pendingDeleteDocId = docId;
+            document.getElementById("deleteAccMessage").innerText = `คุณต้องการลบบัญชี "${name}" (${accNo}) ใช่หรือไม่?`;
+            document.getElementById("confirmDeleteModal").classList.add("show");
+        };
+
+        document.getElementById("btnExecuteDelete").addEventListener("click", async () => {
+            if (!pendingDeleteDocId) return;
+            try {
+                await deleteDoc(doc(db, "accounts", pendingDeleteDocId));
+                closeDeleteModal();
+                showAlert("ลบบัญชีเรียบร้อยแล้ว", "🗑️", "สำเร็จ!");
+                await loadAllAccounts();
+            } catch (err) {
+                console.error(err);
+                showAlert("เกิดข้อผิดพลาดในการลบบัญชี");
+            }
+        });
+    </script>
+</body>
+</html>
