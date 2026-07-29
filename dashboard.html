@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Northstar Bank - หน้าหลัก</title>
+    <style>
+        body { 
+            font-family: sans-serif; 
+            background: radial-gradient(circle at top, #1e293b 0%, #0a192f 60%, #020617 100%); 
+            display: flex; 
+            flex-direction: column;
+            justify-content: space-between; 
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0; 
+            box-sizing: border-box;
+            padding: 30px 20px;
+            color: #ffffff;
+            overflow-x: hidden;
+            opacity: 0;
+            transition: opacity 0.15s ease-in;
+        }
+        body.loaded { opacity: 1; }
+        .container {
+            width: 100%;
+            max-width: 360px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-grow: 1;
+            position: relative;
+        }
+        .header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+        }
+        .user-greeting {
+            font-size: 15px;
+            color: #94a3b8;
+            font-weight: 300;
+        }
+        .user-greeting span {
+            color: #38bdf8;
+            font-weight: 600;
+        }
+        .logout-btn {
+            background: rgba(239, 68, 68, 0.1);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .account-card {
+            width: 100%;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 100%);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 24px;
+            padding: 26px 22px;
+            box-sizing: border-box;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            margin-bottom: 30px;
+            position: relative;
+        }
+        .account-card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .acc-type {
+            font-size: 11px;
+            color: #38bdf8;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 600;
+        }
+        .switch-acc-btn {
+            background: rgba(56, 189, 248, 0.15);
+            color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            padding: 5px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .acc-name {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: #f8fafc;
+        }
+        .acc-number {
+            font-size: 13px;
+            color: #94a3b8;
+            margin-bottom: 18px;
+            letter-spacing: 1.5px;
+        }
+        .balance-section {
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding-top: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .acc-balance-label {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-bottom: 2px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .acc-balance {
+            font-size: 24px;
+            font-weight: 800;
+            color: #ffffff;
+        }
+        .acc-points {
+            font-size: 20px;
+            font-weight: 800;
+            color: #38bdf8;
+        }
+        .section-title {
+            width: 100%;
+            font-size: 14px;
+            color: #94a3b8;
+            margin-bottom: 14px;
+            text-align: left;
+        }
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .menu-item {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 22px 14px;
+            text-align: center;
+            cursor: pointer;
+            text-decoration: none;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .menu-item:hover {
+            background: rgba(56, 189, 248, 0.08);
+            border-color: rgba(56, 189, 248, 0.3);
+        }
+        .menu-icon-wrapper {
+            width: 48px;
+            height: 48px;
+            background: rgba(56, 189, 248, 0.1);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+        .menu-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5, 11, 20, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s ease;
+        }
+        .modal-overlay.show { opacity: 1; visibility: visible; }
+        .modal-card {
+            background: #112240;
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            width: 88%;
+            max-width: 320px;
+            border-radius: 24px;
+            padding: 24px;
+            box-sizing: border-box;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 18px;
+            color: #ffffff;
+        }
+        .acc-option-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            text-align: left;
+        }
+        .acc-option-item {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 12px 14px;
+            border-radius: 14px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #fff;
+        }
+        .acc-option-item:hover {
+            background: rgba(56, 189, 248, 0.08);
+            border-color: rgba(56, 189, 248, 0.3);
+        }
+        .delete-acc-btn {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .modal-action-btn {
+            background: #38bdf8;
+            color: #0a192f;
+            border: none;
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            margin-bottom: 6px;
+        }
+        .modal-close-btn {
+            background: rgba(255, 255, 255, 0.06);
+            color: #94a3b8;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 100%;
+            padding: 10px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .cute-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 14px;
+            padding: 12px 16px;
+            color: #ffffff;
+            font-size: 15px;
+            box-sizing: border-box;
+            outline: none;
+            margin-bottom: 18px;
+            text-align: left;
+        }
+        .modal-btn-row { display: flex; gap: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <div class="user-greeting">Hello, <span id="displayUsername">User</span></div>
+            <button class="logout-btn" onclick="logout()">Sign Out</button>
+        </div>
+
+        <div class="account-card">
+            <div class="account-card-top">
+                <div class="acc-type" id="accType">Personal Account</div>
+                <button class="switch-acc-btn" onclick="openSwitchAccountModal()">Switch Account</button>
+            </div>
+            <div class="acc-name" id="accName">My Primary Account</div>
+            <div class="acc-number" id="accNumber">--</div>
+            
+            <div class="balance-section">
+                <div>
+                    <div class="acc-balance-label">Available Balance</div>
+                    <div class="acc-balance" id="accBalance">0.00 THB</div>
+                </div>
+                <div>
+                    <div class="acc-balance-label">Points</div>
+                    <div class="acc-points" id="accPoints">0 point</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-title">รายการคำสั่ง</div>
+
+        <div class="menu-grid">
+            <a href="transfer.html" class="menu-item">
+                <div class="menu-icon-wrapper">💸</div>
+                <div class="menu-label">โอนเงิน</div>
+            </a>
+            <a href="transfer.html?mode=point" class="menu-item">
+                <div class="menu-icon-wrapper">⭐</div>
+                <div class="menu-label">โอน point</div>
+            </a>
+            <a href="beneficiaries.html" class="menu-item">
+                <div class="menu-icon-wrapper">👥</div>
+                <div class="menu-label">Beneficiaries</div>
+            </a>
+            <a href="history.html" class="menu-item">
+                <div class="menu-icon-wrapper">📜</div>
+                <div class="menu-label">History</div>
+            </a>
+            <a href="settings.html" class="menu-item" style="grid-column: span 2;">
+                <div class="menu-icon-wrapper">⚙️</div>
+                <div class="menu-label">Settings</div>
+            </a>
+            
+            <!-- 🟢 ปุ่ม Admin Console (ซ่อนไว้โดยค่าเริ่มต้น จะแสดงเฉพาะอีเมลแอดมิน) -->
+            <a href="admin.html" id="adminMenuBtn" class="menu-item" style="display: none; border-color: rgba(245, 158, 11, 0.4); background: rgba(245, 158, 11, 0.05); grid-column: span 2;">
+                <div class="menu-icon-wrapper" style="background: rgba(245, 158, 11, 0.15);">🛠️</div>
+                <div class="menu-label" style="color: #fbbf24;">Admin Console</div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal-overlay" id="switchModal">
+        <div class="modal-card">
+            <div class="modal-title">Select Account</div>
+            <div class="acc-option-list" id="accListContainer"></div>
+            <button class="modal-action-btn" id="createAccBtn" onclick="openCreateAccountModal()">+ สร้างบัญชีใหม่ทันที</button>
+            <button class="modal-close-btn" onclick="closeSwitchAccountModal()">ปิด</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="createAccModal">
+        <div class="modal-card" style="text-align: left;">
+            <div class="modal-title" style="text-align: center;">✨ สร้างบัญชีใหม่</div>
+            <div style="font-size: 13px; color: #94a3b8; margin-bottom: 8px;">ตั้งชื่อบัญชีของคุณ:</div>
+            <input type="text" id="accNameInput" class="cute-input" value="Savings Account" placeholder="เช่น บัญชีออมทรัพย์">
+            <div class="modal-btn-row">
+                <button class="modal-close-btn" onclick="closeCreateAccountModal()">ยกเลิก</button>
+                <button class="modal-action-btn" style="margin-bottom: 0;" onclick="confirmCreateAccount()">ตกลง</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="confirmDeleteModal">
+        <div class="modal-card">
+            <div style="font-size: 36px; margin-bottom: 10px;">⚠️</div>
+            <div class="modal-title">ลบบัญชีนี้จริงหรอคะ?</div>
+            <div style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">การกระทำนี้จะไม่สามารถกู้คืนบัญชีกลับมาได้นะ</div>
+            <div class="modal-btn-row">
+                <button class="modal-close-btn" onclick="closeConfirmDeleteModal()">ยกเลิก</button>
+                <button class="modal-action-btn" style="margin-bottom: 0; background: #ef4444; color: #ffffff;" onclick="executeDeleteAccount()">ลบบัญชี</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="alertModal">
+        <div class="modal-card">
+            <div style="font-size: 36px; margin-bottom: 10px;" id="alertIcon">🎉</div>
+            <div class="modal-title" id="alertTitle">สำเร็จ!</div>
+            <div id="alertMessage" style="font-size: 14px; color: #94a3b8; margin-bottom: 20px;">ดำเนินการเรียบร้อยแล้วค่ะ</div>
+            <button class="modal-action-btn" onclick="closeAlertModal()" style="margin-bottom: 0;">ตกลง</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth } from "./firebase-config.js";
+        import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, query, where, getDocs, addDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const db = getFirestore();
+        let currentUser = null;
+        let userAccounts = [];
+        let activeAccount = null;
+        let pendingDeleteId = null;
+
+        const ADMIN_EMAIL = "ciiderydem@gmail.com";
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                let username = user.email ? user.email.split('@')[0] : (user.displayName || "User");
+                document.getElementById("displayUsername").innerText = username;
+                
+                const userEmail = (user.email || "").trim().toLowerCase();
+                if (userEmail === ADMIN_EMAIL) {
+                    const adminBtn = document.getElementById("adminMenuBtn");
+                    if (adminBtn) adminBtn.style.display = "flex";
+                }
+
+                await loadAccountsFromCloud();
+                document.body.classList.add("loaded");
+            } else {
+                window.location.replace("index.html");
+            }
+        });
+
+        async function loadAccountsFromCloud() {
+            const q = query(collection(db, "accounts"), where("userId", "==", currentUser.uid));
+            const querySnapshot = await getDocs(q);
+
+            userAccounts = [];
+            querySnapshot.forEach((docSnap) => {
+                userAccounts.push({ id: docSnap.id, ...docSnap.data() });
+            });
+
+            if (userAccounts.length === 0) {
+                const p1 = Math.floor(100 + Math.random() * 900);
+                const p2 = Math.floor(10 + Math.random() * 90);
+                const p3 = Math.floor(1000 + Math.random() * 9000);
+                const p4 = Math.floor(0 + Math.random() * 10);
+                const randomAccNumber = `${p1}-${p2}-${p3}-${p4}`;
+
+                const newAccData = {
+                    userId: currentUser.uid,
+                    accountName: "My Primary Account",
+                    accountNumber: randomAccNumber,
+                    balance: 0.00,
+                    points: 0,
+                    accountType: "Personal Account"
+                };
+
+                const docRef = await addDoc(collection(db, "accounts"), newAccData);
+                userAccounts.push({ id: docRef.id, ...newAccData });
+            }
+
+            const currentAccId = localStorage.getItem("current_account_id_" + currentUser.uid);
+            activeAccount = userAccounts.find(acc => acc.id === currentAccId) || userAccounts[0];
+            displayAccount(activeAccount);
+        }
+
+        window.displayAccount = function(acc) {
+            activeAccount = acc;
+            document.getElementById("accName").innerText = acc.accountName;
+            document.getElementById("accNumber").innerText = acc.accountNumber;
+            document.getElementById("accBalance").innerText = Number(acc.balance || 0).toLocaleString('en-US', {minimumFractionDigits: 2}) + " THB";
+            document.getElementById("accPoints").innerText = Number(acc.points || 0).toLocaleString() + " point";
+            document.getElementById("accType").innerText = acc.accountType || "Personal Account";
+            if (currentUser) {
+                localStorage.setItem("current_account_id_" + currentUser.uid, acc.id);
+            }
+        }
+
+        window.openSwitchAccountModal = function() {
+            const container = document.getElementById("accListContainer");
+            container.innerHTML = "";
+
+            userAccounts.forEach(acc => {
+                container.innerHTML += `
+                    <div class="acc-option-item" onclick='selectAccountFromModal("${acc.id}")'>
+                        <div>
+                            <strong>${acc.accountName}</strong><br>
+                            <small style="color: #94a3b8;">${acc.accountNumber} • ${Number(acc.balance || 0).toLocaleString('en-US', {minimumFractionDigits: 2})} THB | ${Number(acc.points || 0).toLocaleString()} point</small>
+                        </div>
+                        <button class="delete-acc-btn" onclick="event.stopPropagation(); promptDeleteAccount('${acc.id}')">ลบ</button>
+                    </div>
+                `;
+            });
+
+            document.getElementById("createAccBtn").style.display = userAccounts.length >= 3 ? "none" : "block";
+            document.getElementById("switchModal").classList.add("show");
+        }
+
+        window.closeSwitchAccountModal = function() {
+            document.getElementById("switchModal").classList.remove("show");
+        }
+
+        window.selectAccountFromModal = function(accId) {
+            const selected = userAccounts.find(acc => acc.id === accId);
+            if (selected) displayAccount(selected);
+            closeSwitchAccountModal();
+        }
+
+        window.openCreateAccountModal = function() {
+            if (userAccounts.length >= 3) {
+                showAlert("แจ้งเตือน", "มีบัญชีครบสูงสุด 3 บัญชีแล้วค่ะ", "⚠️");
+                return;
+            }
+            closeSwitchAccountModal();
+            document.getElementById("accNameInput").value = "Savings Account";
+            document.getElementById("createAccModal").classList.add("show");
+        }
+
+        window.closeCreateAccountModal = function() {
+            document.getElementById("createAccModal").classList.remove("show");
+        }
+
+        window.confirmCreateAccount = async function() {
+            const accNameInput = document.getElementById("accNameInput").value.trim();
+            if (!accNameInput) return;
+
+            const p1 = Math.floor(100 + Math.random() * 900);
+            const p2 = Math.floor(10 + Math.random() * 90);
+            const p3 = Math.floor(1000 + Math.random() * 9000);
+            const p4 = Math.floor(0 + Math.random() * 10);
+            const generatedNumber = `${p1}-${p2}-${p3}-${p4}`;
+
+            const newAccData = {
+                userId: currentUser.uid,
+                accountName: accNameInput,
+                accountNumber: generatedNumber,
+                balance: 0.00,
+                points: 0,
+                accountType: "Personal Account"
+            };
+
+            const docRef = await addDoc(collection(db, "accounts"), newAccData);
+            const newAcc = { id: docRef.id, ...newAccData };
+            userAccounts.push(newAcc);
+
+            displayAccount(newAcc);
+            closeCreateAccountModal();
+            showAlert("สำเร็จ!", "สร้างบัญชีใหม่เรียบร้อยแล้วค่ะ ✨", "🎉");
+        }
+
+        window.promptDeleteAccount = function(accId) {
+            if (userAccounts.length <= 1) {
+                showAlert("แจ้งเตือน", "ต้องเหลือบัญชีไว้อย่างน้อย 1 บัญชีนะคะ", "⚠️");
+                return;
+            }
+            pendingDeleteId = accId;
+            closeSwitchAccountModal();
+            document.getElementById("confirmDeleteModal").classList.add("show");
+        }
+
+        window.closeConfirmDeleteModal = function() {
+            document.getElementById("confirmDeleteModal").classList.remove("show");
+            pendingDeleteId = null;
+        }
+
+        window.executeDeleteAccount = async function() {
+            if (!pendingDeleteId) return;
+
+            await deleteDoc(doc(db, "accounts", pendingDeleteId));
+            userAccounts = userAccounts.filter(acc => acc.id !== pendingDeleteId);
+
+            if (activeAccount.id === pendingDeleteId) {
+                displayAccount(userAccounts[0]);
+            }
+
+            closeConfirmDeleteModal();
+            showAlert("สำเร็จ!", "ลบบัญชีเรียบร้อยแล้วค่ะ", "🗑️");
+        }
+
+        window.showAlert = function(title, message, icon = "🎉") {
+            document.getElementById("alertIcon").innerText = icon;
+            document.getElementById("alertTitle").innerText = title;
+            document.getElementById("alertMessage").innerText = message;
+            document.getElementById("alertModal").classList.add("show");
+        }
+        window.closeAlertModal = function() { document.getElementById("alertModal").classList.remove("show"); }
+
+        window.logout = function() {
+            signOut(auth).then(() => window.location.replace("index.html"));
+        }
+    </script>
+</body>
+</html>
