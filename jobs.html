@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NORTHSTAR BANK - ระบบอาชีพ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Prompt', sans-serif; background-color: #0f172a; color: #f8fafc; }
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5, 11, 20, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s ease;
+        }
+        .modal-overlay.show { opacity: 1; visibility: visible; }
+        .modal-card {
+            background: #112240;
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            width: 88%;
+            max-width: 320px;
+            border-radius: 24px;
+            padding: 24px;
+            box-sizing: border-box;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #ffffff;
+        }
+        .modal-action-btn {
+            background: #38bdf8;
+            color: #0a192f;
+            border: none;
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            margin-bottom: 6px;
+        }
+        .modal-close-btn {
+            background: rgba(255, 255, 255, 0.06);
+            color: #94a3b8;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 100%;
+            padding: 10px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .modal-btn-row { display: flex; gap: 10px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Navbar -->
+    <nav class="bg-slate-900 border-b border-slate-800 px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+            <span class="text-xl font-bold tracking-wider text-blue-400">NORTHSTAR BANK</span>
+            <span class="text-xs bg-blue-900 text-blue-300 px-2.5 py-1 rounded-full font-medium">ระบบอาชีพ</span>
+        </div>
+        <a href="dashboard.html" class="text-sm bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-lg transition">กลับหน้าหลัก</a>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-5xl w-full mx-auto p-6">
+        
+        <!-- Account Info Bar -->
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div>
+                <p class="text-xs text-slate-400">บัญชีที่กำลังใช้งานปัจจุบัน</p>
+                <h2 id="currentAccountName" class="text-lg font-semibold text-blue-300">กำลังโหลดข้อมูลบัญชี...</h2>
+            </div>
+            <div class="text-right">
+                <p class="text-xs text-slate-400">ยอดเงินคงเหลือในบัญชี</p>
+                <h3 id="currentBalance" class="text-xl font-bold text-emerald-400">0.00 บาท</h3>
+            </div>
+        </div>
+
+        <!-- Section: Dynamic Content -->
+        <div id="jobContainer">
+            <div class="text-center py-12 text-slate-400">กำลังโหลดข้อมูลตลาดแรงงาน...</div>
+        </div>
+
+    </main>
+
+    <!-- Cute Modals -->
+    <div class="modal-overlay" id="alertModal">
+        <div class="modal-card">
+            <div style="font-size: 36px; margin-bottom: 10px;" id="alertIcon">🎉</div>
+            <div class="modal-title" id="alertTitle">แจ้งเตือน</div>
+            <div id="alertMessage" style="font-size: 14px; color: #94a3b8; margin-bottom: 20px;">ข้อความแจ้งเตือน</div>
+            <button class="modal-action-btn" onclick="closeAlertModal()" style="margin-bottom: 0;">ตกลง</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="confirmModal">
+        <div class="modal-card">
+            <div style="font-size: 36px; margin-bottom: 10px;" id="confirmIcon">💡</div>
+            <div class="modal-title" id="confirmTitle">ยืนยันการทำรายการ</div>
+            <div id="confirmMessage" style="font-size: 14px; color: #94a3b8; margin-bottom: 20px;">คุณต้องการดำเนินการต่อใช่หรือไม่?</div>
+            <div class="modal-btn-row">
+                <button class="modal-close-btn" onclick="resolveConfirm(false)">ยกเลิก</button>
+                <button class="modal-action-btn" style="margin-bottom: 0;" id="confirmYesBtn" onclick="resolveConfirm(true)">ตกลง</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs (Firestore) -->
+    <script type="module">
+        import { auth } from "./firebase-config.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, updateDoc, collection, getDocs, setDoc, deleteDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const db = getFirestore();
+        let currentUser = null;
+        let currentAccountId = null;
+        let activeAccountData = null;
+        let confirmCallback = null;
+
+        const JOB_DEFINITIONS = {
+            teacher: { name: "ครู", baseRate: 50, maxQuota: 20, maxLevel: 5, upgradeCost: (lvl) => 10000 + (lvl - 2) * 5000 },
+            doctor: { name: "หมอ", baseRate: 70, maxQuota: 10, maxLevel: 3, upgradeCost: (lvl) => lvl === 2 ? 20000 : 25000 },
+            nurse: { name: "พยาบาล", baseRate: 70, maxQuota: 15, maxLevel: 1 },
+            merchant: { name: "พ่อค้า / แม่ค้า", baseRate: 50, maxQuota: null, maxLevel: 1 },
+            police: { name: "ตำรวจ", baseRate: 60, maxQuota: 15, maxLevel: 4, upgradeCost: (lvl) => 15000 + (lvl - 2) * 5000 },
+            influencer: { name: "อินฟลูเอนเซอร์", baseRate: 60, maxQuota: 20, maxLevel: 1 },
+            lawyer: { name: "ทนาย", baseRate: 60, maxQuota: 10, maxLevel: 3, upgradeCost: (lvl) => 20000 + (lvl - 2) * 5000 },
+            employee: { name: "พนักงานบริษัท", baseRate: 50, maxQuota: null, maxLevel: 2, upgradeCost: () => 20000 }
+        };
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                currentAccountId = localStorage.getItem("current_account_id_" + user.uid);
+
+                if (!currentAccountId) {
+                    showAlert("แจ้งเตือน", "กรุณาเลือกบัญชีก่อนเข้าใช้งานระบบอาชีพ", "⚠️");
+                    setTimeout(() => window.location.replace("dashboard.html"), 1500);
+                    return;
+                }
+
+                await loadAccountAndJobsData();
+            } else {
+                window.location.replace("index.html");
+            }
+        });
+
+        async function loadAccountAndJobsData() {
+            try {
+                const accDocRef = doc(db, "accounts", currentAccountId);
+                const accSnap = await getDoc(accDocRef);
+
+                if (!accSnap.exists()) {
+                    document.getElementById('currentAccountName').innerText = "ไม่พบข้อมูลบัญชี";
+                    return;
+                }
+
+                activeAccountData = accSnap.data();
+                document.getElementById('currentAccountName').innerText = `บัญชี: ${activeAccountData.accountName} (${activeAccountData.accountNumber})`;
+                document.getElementById('currentBalance').innerText = `${Number(activeAccountData.balance || 0).toLocaleString('en-US', {minimumFractionDigits: 2})} บาท`;
+
+                const jobsSnap = await getDocs(collection(db, "jobs"));
+                const allJobsData = {};
+                jobsSnap.forEach(docSnap => {
+                    allJobsData[docSnap.id] = docSnap.data();
+                });
+
+                const myJob = allJobsData[currentAccountId] || null;
+                renderUI(myJob, allJobsData, Number(activeAccountData.balance || 0));
+
+            } catch (error) {
+                console.error("Error loading data:", error);
+                document.getElementById('jobContainer').innerHTML = `<div class="text-red-400 text-center">เกิดข้อผิดพลาดในการโหลดข้อมูล: ${error.message}</div>`;
+            }
+        }
+
+        function renderUI(myJob, allJobsData, accountBalance) {
+            const container = document.getElementById('jobContainer');
+
+            const jobCounts = {};
+            Object.keys(JOB_DEFINITIONS).forEach(k => jobCounts[k] = 0);
+            Object.values(allJobsData).forEach(j => {
+                if (j && j.jobId && jobCounts[j.jobId] !== undefined) {
+                    jobCounts[j.jobId]++;
+                }
+            });
+
+            if (!myJob || !myJob.jobId) {
+                let html = `
+                    <div class="mb-6">
+                        <h1 class="text-2xl font-bold text-slate-100">โปรดเลือกอาชีพของคุณ</h1>
+                        <p class="text-sm text-slate-400">เลือกอาชีพที่ต้องการเพื่อสร้างรายได้เข้าบัญชี (1 บัญชีเลือกได้ 1 อาชีพ)</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                `;
+
+                for (let [jobKey, jobInfo] of Object.entries(JOB_DEFINITIONS)) {
+                    const currentCount = jobCounts[jobKey] || 0;
+                    const isFull = jobInfo.maxQuota !== null && currentCount >= jobInfo.maxQuota;
+                    const quotaText = jobInfo.maxQuota !== null ? `${currentCount} / ${jobInfo.maxQuota} คน` : `ไม่จำกัดจำนวน`;
+
+                    html += `
+                        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 flex flex-col justify-between">
+                            <div>
+                                <div class="flex justify-between items-start mb-2">
+                                    <h3 class="text-lg font-bold text-blue-300">${jobInfo.name}</h3>
+                                    <span class="text-xs px-2.5 py-1 rounded-full ${isFull ? 'bg-red-900 text-red-300' : 'bg-slate-700 text-slate-300'}">${quotaText}</span>
+                                </div>
+                                <p class="text-sm text-slate-300 mb-4">เรทเงินเริ่มต้น: <span class="font-semibold text-emerald-400">${jobInfo.baseRate} บาท / ชั่วโมง</span></p>
+                            </div>
+                            <button onclick="window.selectJob('${jobKey}', ${isFull})" 
+                                class="w-full py-2.5 rounded-xl font-medium transition ${isFull ? 'bg-slate-700 text-slate-500 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-500 text-white'}">
+                                ${isFull ? 'ตำแหน่งเต็มแล้ว' : 'เลือกทำอาชีพนี้'}
+                            </button>
+                        </div>
+                    `;
+                }
+                html += `</div>`;
+                container.innerHTML = html;
+
+            } else {
+                const jobInfo = JOB_DEFINITIONS[myJob.jobId];
+                let currentRate = jobInfo.baseRate;
+
+                if (myJob.jobId === 'teacher') currentRate += (myJob.level - 1) * 20;
+                if (myJob.jobId === 'doctor') {
+                    if (myJob.level === 2) currentRate = 100;
+                    if (myJob.level === 3) currentRate = 150;
+                }
+                if (myJob.jobId === 'police') currentRate += (myJob.level - 1) * 20;
+                if (myJob.jobId === 'lawyer') currentRate += (myJob.level - 1) * 30;
+                if (myJob.jobId === 'employee' && myJob.level === 2) currentRate = 80;
+
+                const now = Date.now();
+                const hoursPassed = (now - (myJob.lastUpdated || now)) / (1000 * 60 * 60);
+                const earnedNow = Math.floor(hoursPassed * currentRate);
+                const totalAccumulated = (myJob.accumulatedMoney || 0) + earnedNow;
+
+                container.innerHTML = `
+                    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 mb-6">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-700 pb-6 mb-6">
+                            <div>
+                                <span class="text-xs bg-emerald-900 text-emerald-300 px-3 py-1 rounded-full font-medium">กำลังปฏิบัติหน้าที่</span>
+                                <h1 class="text-3xl font-bold text-white mt-2">${jobInfo.name}</h1>
+                                <p class="text-sm text-slate-400 mt-1">ระดับงาน: เลเวล ${myJob.level} / ${jobInfo.maxLevel} | เรทปัจจุบัน: <span class="text-emerald-400 font-semibold">${currentRate} บาท / ชม.</span></p>
+                            </div>
+                            <button onclick="window.resignJob()" class="text-xs bg-red-900/50 hover:bg-red-900 text-red-300 px-4 py-2 rounded-lg border border-red-700 transition">ออกจากงาน (รีเซ็ตเลเวล)</button>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                            <div class="bg-slate-900/50 p-5 rounded-xl border border-slate-700/50">
+                                <p class="text-xs text-slate-400 mb-1">ยอดเงินสะสมรอรับ</p>
+                                <h2 class="text-3xl font-bold text-emerald-400 mb-4">${totalAccumulated.toLocaleString()} <span class="text-sm text-slate-400">บาท</span></h2>
+                                <button onclick="window.claimSalary(${totalAccumulated}, '${jobInfo.name}')" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl transition shadow-lg shadow-emerald-900/20">
+                                    กดรับเงินเข้าบัญชีธนาคาร
+                                </button>
+                            </div>
+
+                            <div>
+                                ${myJob.level < jobInfo.maxLevel ? `
+                                    <div class="bg-slate-900/50 p-5 rounded-xl border border-slate-700/50">
+                                        <p class="text-xs text-slate-400 mb-1">อัปเกรดอาชีพ</p>
+                                        <h3 class="text-sm font-semibold text-slate-200 mb-2">เลื่อนขั้นเป็นเลเวล ${myJob.level + 1}</h3>
+                                        <p class="text-xs text-slate-400 mb-4">ค่าใช้จ่ายในการอัปเกรด: <span class="text-amber-400 font-bold">${jobInfo.upgradeCost(myJob.level + 1).toLocaleString()} บาท</span></p>
+                                        <button onclick="window.upgradeJob('${myJob.jobId}', ${myJob.level}, ${accountBalance})" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl transition">
+                                            อัปเกรดอาชีพทันที
+                                        </button>
+                                    </div>
+                                ` : `
+                                    <div class="bg-slate-900/50 p-5 rounded-xl border border-slate-700/50 text-center py-8">
+                                        <p class="text-amber-400 font-semibold">คุณอัปเกรดอาชีพถึงระดับสูงสุดแล้ว!</p>
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        window.selectJob = async function(jobKey, isFull) {
+            if (isFull) {
+                showAlert("แจ้งเตือน", "อาชีพนี้เต็มแล้ว กรุณาเลือกอาชีพอื่นนะคะ", "⚠️");
+                return;
+            }
+            
+            showConfirm("ยืนยันอาชีพ", "คุณต้องการเลือกทำอาชีพนี้ใช่หรือไม่?", "💼", async (confirmed) => {
+                if (!confirmed) return;
+                try {
+                    await setDoc(doc(db, "jobs", currentAccountId), {
+                        jobId: jobKey,
+                        level: 1,
+                        accumulatedMoney: 0,
+                        lastUpdated: Date.now()
+                    });
+                    showAlert("สำเร็จ!", "เริ่มทำงานในอาชีพนี้เรียบร้อยแล้วค่ะ ✨", "🎉");
+                    loadAccountAndJobsData();
+                } catch (err) {
+                    showAlert("เกิดข้อผิดพลาด", err.message, "❌");
+                }
+            });
+        };
+
+        window.claimSalary = async function(amount, jobName) {
+            if (amount <= 0) {
+                showAlert("แจ้งเตือน", "ยังไม่มียอดเงินสะสมให้กดรับนะคะ", "⏳");
+                return;
+            }
+
+            try {
+                const accRef = doc(db, "accounts", currentAccountId);
+                const jobRef = doc(db, "jobs", currentAccountId);
+
+                const currentBalance = Number(activeAccountData.balance || 0);
+                const newBalance = currentBalance + amount;
+
+                // 1. อัปเดตยอดเงินในบัญชี
+                await updateDoc(accRef, { balance: newBalance });
+
+                // 2. รีเซ็ตยอดสะสมใน jobs
+                await updateDoc(jobRef, {
+                    accumulatedMoney: 0,
+                    lastUpdated: Date.now()
+                });
+
+                // 3. บันทึกประวัติลงใน history collection พร้อมใส่อิโมจิระบุอาชีพ
+                await addDoc(collection(db, "history"), {
+                    accountId: currentAccountId,
+                    accountNumber: activeAccountData.accountNumber,
+                    type: "income",
+                    category: "job",
+                    title: `💼 รับเงินเดือนอาชีพ ${jobName}`,
+                    amount: amount,
+                    timestamp: new Date().toISOString()
+                });
+
+                showAlert("สำเร็จ!", `รับเงินเข้าบัญชีสำเร็จ ${amount.toLocaleString()} บาท! 💵`, "🎉");
+                loadAccountAndJobsData();
+            } catch (err) {
+                showAlert("เกิดข้อผิดพลาด", err.message, "❌");
+            }
+        };
+
+        window.upgradeJob = async function(jobKey, currentLevel, accountBalance) {
+            const jobInfo = JOB_DEFINITIONS[jobKey];
+            const cost = jobInfo.upgradeCost(currentLevel + 1);
+
+            if (accountBalance < cost) {
+                showAlert("เงินในบัญชีไม่พอ", "ยอดเงินในบัญชีของคุณไม่เพียงพอสำหรับการอัปเกรดค่ะ!", "💸");
+                return;
+            }
+
+            showConfirm("ยืนยันการอัปเกรด", `ยืนยันการใช้เงิน ${cost.toLocaleString()} บาท เพื่ออัปเกรดอาชีพใช่หรือไม่?`, "⭐", async (confirmed) => {
+                if (!confirmed) return;
+                try {
+                    const accRef = doc(db, "accounts", currentAccountId);
+                    const jobRef = doc(db, "jobs", currentAccountId);
+
+                    await updateDoc(accRef, { balance: accountBalance - cost });
+                    await updateDoc(jobRef, { level: currentLevel + 1 });
+
+                    showAlert("สำเร็จ!", "อัปเกรดอาชีพสำเร็จแล้วค่ะ! ✨", "🚀");
+                    loadAccountAndJobsData();
+                } catch (err) {
+                    showAlert("เกิดข้อผิดพลาด", err.message, "❌");
+                }
+            });
+        };
+
+        window.resignJob = async function() {
+            showConfirm("ยืนยันการลาออก", "คำเตือน: หากลาออกจากงาน เลเวลและความก้าวหน้าทั้งหมดจะถูกรีเซ็ตเป็นศูนย์! ยืนยันการลาออกหรือไม่?", "⚠️", async (confirmed) => {
+                if (!confirmed) return;
+                try {
+                    await deleteDoc(doc(db, "jobs", currentAccountId));
+                    showAlert("สำเร็จ", "ลาออกจากงานเรียบร้อยแล้วค่ะ", "🗑️");
+                    loadAccountAndJobsData();
+                } catch (err) {
+                    showAlert("เกิดข้อผิดพลาด", err.message, "❌");
+                }
+            });
+        };
+
+        // Modal Helpers
+        window.showAlert = function(title, message, icon = "🎉") {
+            document.getElementById("alertIcon").innerText = icon;
+            document.getElementById("alertTitle").innerText = title;
+            document.getElementById("alertMessage").innerText = message;
+            document.getElementById("alertModal").classList.add("show");
+        }
+        window.closeAlertModal = function() {
+            document.getElementById("alertModal").classList.remove("show");
+        }
+
+        window.showConfirm = function(title, message, icon, callback) {
+            document.getElementById("confirmIcon").innerText = icon;
+            document.getElementById("confirmTitle").innerText = title;
+            document.getElementById("confirmMessage").innerText = message;
+            confirmCallback = callback;
+            document.getElementById("confirmModal").classList.add("show");
+        }
+
+        window.resolveConfirm = function(result) {
+            document.getElementById("confirmModal").classList.remove("show");
+            if (confirmCallback) {
+                confirmCallback(result);
+                confirmCallback = null;
+            }
+        }
+    </script>
+</body>
+</html>
